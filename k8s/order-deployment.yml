@@ -8,6 +8,16 @@ data:
   JWT_SECRET: eW91ci1qd3Qtc2VjcmV0LWtleQ==
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+data:
+  CART_SERVICE_URL: http://cart-service:3003
+  PRODUCT_SERVICE_URL: http://product-service:3002
+  USER_SERVICE_URL: http://user-service:3001
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,29 +33,52 @@ spec:
         app: order-service
     spec:
       containers:
-        - name: order-service
-          image: adish786/order-service:latest
-          ports:
-            - containerPort: 3004
-          env:
-            - name: PORT
-              value: "3004"
-            - name: MONGODB_URI
-              valueFrom:
-                secretKeyRef:
-                  name: order-service-secret
-                  key: MONGODB_URI
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: order-service-secret
-                  key: JWT_SECRET
+      - name: order-service
+        image: adish786/order-service:latest
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 3004
+        env:
+          - name: PORT
+            value: "3004"
+
+          - name: MONGODB_URI
+            valueFrom:
+              secretKeyRef:
+                name: order-service-secret
+                key: MONGODB_URI
+
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: order-service-secret
+                key: JWT_SECRET
+
+          - name: CART_SERVICE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: order-service-config
+                key: CART_SERVICE_URL
+
+          - name: PRODUCT_SERVICE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: order-service-config
+                key: PRODUCT_SERVICE_URL
+
+          - name: USER_SERVICE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: order-service-config
+                key: USER_SERVICE_URL
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: order-service
 spec:
+  type: ClusterIP
   selector:
     app: order-service
   ports:
