@@ -1,0 +1,15 @@
+{
+  "ArtifactName": "ecommerce-frontend:ci",
+  "Results": [
+    {
+      "Target": "nginx:alpine",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-2022-41741",
+          "PkgName": "openssl",
+          "Severity": "HIGH"
+        }
+      ]
+    }
+  ]
+}
