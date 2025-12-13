@@ -9,14 +9,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Trivy
+      - name: Install Trivy (Dynamic Latest)
         run: |
-          sudo apt-get install wget -y
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
-          sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
+          sudo apt-get update
+          sudo apt-get install -y wget curl jq
+          
+          # Get latest release version from GitHub API
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r '.tag_name')
+          VERSION_NUMBER=${LATEST_VERSION#v}  # Remove 'v' prefix
+          
+          echo "Downloading Trivy version: ${LATEST_VERSION} (${VERSION_NUMBER})"
+          
+          # Download the correct version
+          wget https://github.com/aquasecurity/trivy/releases/download/${LATEST_VERSION}/trivy_${VERSION_NUMBER}_Linux-64bit.deb
+          
+          # Install
+          sudo dpkg -i trivy_${VERSION_NUMBER}_Linux-64bit.deb
+          
+          # Clean up
+          rm trivy_${VERSION_NUMBER}_Linux-64bit.deb
+          
+          # Verify installation
+          trivy --version
 
       - name: Build Image
         run: docker build -t ecommerce-app:ci .
 
       - name: Scan Image
-        run: bash scanner/scan_image.sh ecommerce-app:ci
+        run: |
+          mkdir -p scanner
+          bash scanner/scan_image.sh ecommerce-app:ci
